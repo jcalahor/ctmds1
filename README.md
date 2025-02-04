@@ -47,12 +47,14 @@ To install and use the project locally:
    Install the required Python packages:
 
    
-   ```pip install -r requirements.txt
+   ```
+   pip install -r requirements.txt
    ```
 
    If you don't have a requirements.txt, manually install the required dependencies:
 
-   ```pip install typer numpy
+   ```
+   pip install typer numpy
    ```
 
 ### Usage
@@ -61,7 +63,8 @@ After setting up the environment, you can use the command-line interface to gene
 
 Command Syntax:
 
-   ```python src/main.py generate --strategy <strategy> --number <number>
+   ```
+   python src/main.py generate --strategy <strategy> --number <number>
    ```
 
     ```
@@ -76,7 +79,8 @@ Command Syntax:
 
 1. Generate 10 random numbers using the Numpy method:
 
-   ```python src/main.py generate --strategy N --number 10
+   ```
+   python src/main.py generate --strategy N --number 10
 
    Output:
    Current time: 1675277681.512604 seconds
@@ -86,7 +90,8 @@ Command Syntax:
 
 2. Generate 10 random numbers using the Iterative method:
 
-   ```python src/main.py generate --strategy I --number 10
+   ```
+   python src/main.py generate --strategy I --number 10
 
    Output:
    Current time: 1675277681.712604 seconds
