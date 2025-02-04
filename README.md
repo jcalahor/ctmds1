@@ -24,28 +24,36 @@ To install and use the project locally:
 
 1. Clone the repository (if applicable):
 
-   git clone <repository_url>
+   ```git clone <repository_url>
    cd <project_directory>
+   ```
 
 2. Create and activate a virtual environment:
 
    On macOS/Linux:
+    ```
      python3 -m venv venv
      source venv/bin/activate
+     ```
 
    On Windows:
+     ```
      python -m venv venv
      venv\Scripts\activate
+     ```
 
 3. Install dependencies:
 
    Install the required Python packages:
 
-   pip install -r requirements.txt
+   
+   ```pip install -r requirements.txt
+   ```
 
    If you don't have a requirements.txt, manually install the required dependencies:
 
-   pip install typer numpy
+   ```pip install typer numpy
+   ```
 
 ### Usage
 
@@ -53,13 +61,16 @@ After setting up the environment, you can use the command-line interface to gene
 
 Command Syntax:
 
-   python src/main.py generate --strategy <strategy> --number <number>
+   ```python src/main.py generate --strategy <strategy> --number <number>
+   ```
 
-Options:
-- --strategy: Specifies the strategy for generating random numbers. You can choose between:
-    - `N`: Numpy-based random number generation.
-    - `I`: Iterative method for generating random numbers.
-- --number: The number of random numbers to generate.
+    ```
+    Options:
+    - --strategy: Specifies the strategy for generating random numbers. You can choose between:
+        - `N`: Numpy-based random number generation.
+        - `I`: Iterative method for generating random numbers.
+    - --number: The number of random numbers to generate.
+    ```
 
 ### Example Commands:
 
