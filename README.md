@@ -1,8 +1,8 @@
-Random Number Generator (Source Code)
+### Random Number Generator (Source Code)
 
 This repository provides the source code for a command-line tool to generate random numbers using two different strategies: Numpy-based and Iterative. It utilizes `typer` for building the command-line interface (CLI) and `numpy` for fast number generation.
 
-Project Structure:
+## Project Structure:
 
 src/
 ├── generator.py      # Contains the random number generation methods
@@ -15,11 +15,9 @@ This file contains two random number generation methods:
 - `numpy_method(number: int)`: Uses Numpy to generate `number` of random numbers between 1 and 100.
 - `iterative_method(number: int)`: Uses a Python list comprehension and the `random` module to generate `number` of random numbers.
 
-`generator.py`
-
 This is the main entry point for the CLI tool using `typer`. It exposes a command `generate` that allows the user to choose between the two strategies (Numpy or Iterative) and specify the number of random numbers to generate.
 
-Installation
+## Installation
 
 To install and use the project locally:
 
@@ -48,7 +46,7 @@ To install and use the project locally:
 
    pip install typer numpy
 
-Usage
+## Usage
 
 After setting up the environment, you can use the command-line interface to generate random numbers.
 
@@ -62,25 +60,27 @@ Options:
     - `I`: Iterative method for generating random numbers.
 - --number: The number of random numbers to generate.
 
-Example Commands:
+## Example Commands:
 
 1. Generate 10 random numbers using the Numpy method:
 
-   python src/main.py generate --strategy N --number 10
+   ```python src/main.py generate --strategy N --number 10
 
    Output:
    Current time: 1675277681.512604 seconds
    10
    Elapsed time: 0.001234567 seconds
+   ```
 
 2. Generate 10 random numbers using the Iterative method:
 
-   python src/main.py generate --strategy I --number 10
+   ```python src/main.py generate --strategy I --number 10
 
    Output:
    Current time: 1675277681.712604 seconds
    10
    Elapsed time: 0.002345678 seconds
+   ```
 
 Options:
 
@@ -88,7 +88,7 @@ Options:
 - `--number`: The number of random numbers you want to generate.
 
 
-Tests:
+## Tests:
 
 ```
 pytest tests/
