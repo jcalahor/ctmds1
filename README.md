@@ -4,10 +4,11 @@ This repository provides the source code for a command-line tool to generate ran
 
 ### Project Structure:
 
-src/
+```src/
 ├── generator.py      # Contains the random number generation methods
 ├── main.py           # Main entry point for the CLI application
 └── README.md         # Project documentation
+```
 
 `generator.py`
 
