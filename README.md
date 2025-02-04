@@ -1,8 +1,8 @@
-### Random Number Generator (Source Code)
+## Random Number Generator (Source Code)
 
 This repository provides the source code for a command-line tool to generate random numbers using two different strategies: Numpy-based and Iterative. It utilizes `typer` for building the command-line interface (CLI) and `numpy` for fast number generation.
 
-## Project Structure:
+### Project Structure:
 
 src/
 ├── generator.py      # Contains the random number generation methods
@@ -17,7 +17,7 @@ This file contains two random number generation methods:
 
 This is the main entry point for the CLI tool using `typer`. It exposes a command `generate` that allows the user to choose between the two strategies (Numpy or Iterative) and specify the number of random numbers to generate.
 
-## Installation
+### Installation
 
 To install and use the project locally:
 
@@ -46,7 +46,7 @@ To install and use the project locally:
 
    pip install typer numpy
 
-## Usage
+### Usage
 
 After setting up the environment, you can use the command-line interface to generate random numbers.
 
@@ -60,7 +60,7 @@ Options:
     - `I`: Iterative method for generating random numbers.
 - --number: The number of random numbers to generate.
 
-## Example Commands:
+### Example Commands:
 
 1. Generate 10 random numbers using the Numpy method:
 
@@ -88,7 +88,7 @@ Options:
 - `--number`: The number of random numbers you want to generate.
 
 
-## Tests:
+### Tests:
 
 ```
 pytest tests/
