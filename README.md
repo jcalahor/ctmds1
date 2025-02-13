@@ -1,113 +1,55 @@
-## Random Number Generator (Source Code)
+# ctmds1: Random Number Generator
 
-This repository provides the source code for a command-line tool to generate random numbers using two different strategies: Numpy-based and Iterative. It utilizes `typer` for building the command-line interface (CLI) and `numpy` for fast number generation.
+A Python application for generating random numbers, powered by **Poetry** for dependency management, **Ruff** for linting, and a **Makefile** for automation.
 
-### Project Structure:
+## Prerequisites
 
-```src/
-├── generator.py      # Contains the random number generation methods
-├── main.py           # Main entry point for the CLI application
-└── README.md         # Project documentation
-```
+Ensure you have the following tools installed on your system:
 
-`generator.py`
+- **Python** (3.x)
+- **Poetry**: For managing dependencies and packaging.
+- **Make**: For automating tasks.
+- **Ruff**: For linting your code.
 
-This file contains two random number generation methods:
-- `numpy_method(number: int)`: Uses Numpy to generate `number` of random numbers between 1 and 100.
-- `iterative_method(number: int)`: Uses a Python list comprehension and the `random` module to generate `number` of random numbers.
+You can install Poetry by following the instructions at [Poetry Installation Guide](https://python-poetry.org/docs/#installation).
 
-This is the main entry point for the CLI tool using `typer`. It exposes a command `generate` that allows the user to choose between the two strategies (Numpy or Iterative) and specify the number of random numbers to generate.
+## Project Setup
 
-### Installation
+To get started with the project:
 
-To install and use the project locally:
+1. Clone the repository:
 
-1. Clone the repository (if applicable):
-
-   ```git clone <repository_url>
-   cd <project_directory>
-   ```
-
-2. Create and activate a virtual environment:
-
-   On macOS/Linux:
-    ```
-     python3 -m venv venv
-     source venv/bin/activate
-     ```
-
-   On Windows:
-     ```
-     python -m venv venv
-     venv\Scripts\activate
-     ```
-
-3. Install dependencies:
-
-   Install the required Python packages:
-
-   
-   ```
-   pip install -r requirements.txt
-   ```
-
-   If you don't have a requirements.txt, manually install the required dependencies:
-
-   ```
-   pip install typer numpy
-   ```
-
-### Usage
-
-After setting up the environment, you can use the command-line interface to generate random numbers.
-
-Command Syntax:
-
-   ```
-   python src/main.py generate --strategy <strategy> --number <number>
-   ```
-
-    ```
-    Options:
-    - --strategy: Specifies the strategy for generating random numbers. You can choose between:
-        - `N`: Numpy-based random number generation.
-        - `I`: Iterative method for generating random numbers.
-    - --number: The number of random numbers to generate.
+    ```bash
+    git clone <repository-url>
+    cd ctmds1
     ```
 
-### Example Commands:
+2. Install project dependencies with Poetry:
 
-1. Generate 10 random numbers using the Numpy method:
+    ```bash
+    poetry install
+    ```
 
-   ```
-   python src/main.py generate --strategy N --number 10
+3. Activate the Poetry virtual environment (Poetry automatically handles this):
 
-   Output:
-   Current time: 1675277681.512604 seconds
-   10
-   Elapsed time: 0.001234567 seconds
-   ```
+    ```bash
+    poetry shell
+    ```
 
-2. Generate 10 random numbers using the Iterative method:
+## Running the Application
 
-   ```
-   python src/main.py generate --strategy I --number 10
+The main command-line interface (CLI) is powered by **Typer**. You can use it to generate random numbers by running the following command:
 
-   Output:
-   Current time: 1675277681.712604 seconds
-   10
-   Elapsed time: 0.002345678 seconds
-   ```
-
-Options:
-
-- `--strategy`: Choose `N` for Numpy-based generation or `I` for the Iterative method.
-- `--number`: The number of random numbers you want to generate.
-
-
-### Tests:
-
-```
-pytest tests/
+```bash
+poetry run python ctmds1/rand_nums.py generate --number 100
 ```
 
+
+```bash
+poetry run python ctmds1/rand_nums.py country-date --for-date <date> --country-code <country_code> --granularity <granularity>
+```
+```
+calahor76@ubuntudev:~/development/commodities_training/ctmds1$ poetry run python ctmds1/rand_nums.py country-date --for-date "2025-01-01" --country-code GB --granularity hh
+{'0000': 61.062105220945114, '0030': 63.88805111738879, '0100': 70.46951577785222, '0130': 57.52272635961825, '0200': 52.898265509276946, '0230': 56.2433903196268, '0300': 52.498295282927444, '0330': 58.662683199087546, '0400': 54.61566228102327, '0430': 54.68783622792723, '0500': 52.50797702216645, '0530': 69.46034613892898, '0600': 60.17743910985692, '0630': 61.66815402372197, '0700': 65.98085846474315, '0730': 54.61978836306809, '0800': 70.85928783123077, '0830': 68.05341949442531, '0900': 58.173708391604514, '0930': 54.63268574432523, '1000': 58.35590588116611, '1030': 51.52642189689147, '1100': 58.133446332772984, '1130': 62.44867567371221, '1200': 69.82530593821883, '1230': 56.88095621253383, '1300': 55.97686372433188, '1330': 58.47051306949788, '1400': 66.03548175916973, '1430': 59.91024969007674, '1500': 53.68461802480505, '1530': 52.38492362744091, '1600': 56.16981666063763, '1630': 60.96792863043524, '1700': 67.75583145369559, '1730': 54.25268780914822, '1800': 58.33372195498802, '1830': 59.91421845441062, '1900': 66.64226182307671, '1930': 60.74684634817217, '2000': 54.44909483051181, '2030': 64.5711928649991, '2100': 53.13178589619195, '2130': 68.57450527851233, '2200': 67.32408297874238, '2230': 58.342088227139854, '2300': 58.25932244792248, '2330': 60.939639427762756}
+jcalahor76@ubuntudev:~/development/commodities_training/ctmds1$ 
+```
