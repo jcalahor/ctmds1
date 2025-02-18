@@ -26,6 +26,7 @@ shellingham = "1.5.4"
 tomli = "2.2.1"
 typer = "0.15.1"
 typing-extensions = "4.12.2"
+pytz = "^2025.1"
 
 
 
