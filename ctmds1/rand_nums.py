@@ -6,10 +6,11 @@ from typing import Dict
 from enum import Enum
 from datetime import datetime, timedelta
 import pytz
-from constants import Countries
+from constants import Countries, CountryDefaultPriceBase, GranularityParam, Commodity
+from curves import SEASON_CURVE_BY_COUNTRY_COMMODITY, HOURLY_CURVE_BY_COUNTRY_COMMODITY
 
 
-def get_hours_in_day(date_str, timezone_str):
+def get_calendar_details(date_str, timezone_str):
     tz = pytz.timezone(timezone_str)
     date = datetime.strptime(date_str, "%Y-%m-%d").date()
 
@@ -19,12 +20,18 @@ def get_hours_in_day(date_str, timezone_str):
     end = tz.localize(datetime.combine(next_day, datetime.min.time()), is_dst=None)
 
     hours = (end - start).total_seconds() / 3600
-    return int(hours)
 
+    quarter = "Q1"
+    if date.month in (1, 2, 3):
+        quarter = "Q1"
+    elif date.month in (4, 5, 6):
+        quarter = "Q2"
+    elif date.month in (7, 8, 9):
+        quarter = "Q3"
+    else:
+        quarter = "Q4"
 
-class GranularityParam(str, Enum):
-    h = "h"
-    hh = "hh"
+    return int(hours), quarter
 
 
 # Configure the logger
@@ -37,13 +44,6 @@ logger = logging.getLogger(__name__)
 
 app = typer.Typer()
 
-COUNTRIES = {
-    "GB": 61,
-    "FR": 58,
-    "NL": 52,
-    "DE": 57,
-}
-
 
 def numpy_method(n: int):
     random_numbers = np.random.uniform(1, 100, size=n)
@@ -52,46 +52,53 @@ def numpy_method(n: int):
 
 @app.command()
 def country_date(
+    commodity: Commodity = Commodity.crude,
     for_date: str = typer.Option(...),
-    country_code: str = typer.Option(...),
+    country: Countries = Countries.GB,
     granularity: GranularityParam = GranularityParam.h,
 ):
+    n, quarter = get_calendar_details(for_date, "America/New_York")
+
     def rand_numbers(n: int, base):
         low_limit = base - 10
         upper_limit = base + 10
         random_numbers = np.random.uniform(low_limit, upper_limit, size=n)
         return random_numbers
 
-    def get_prices_h(country_code, n):
-        numbers = rand_numbers(n, COUNTRIES[country_code])
+    def get_prices_h(n):
+        numbers = rand_numbers(n, CountryDefaultPriceBase[str(country)])
         result_dict: Dict[str, float] = {}
         minute = 0
         for i in range(n):
             hour = i
             time_str = f"{hour:02}{minute:02}"
-            result_dict[time_str] = float(numbers[i])
+            result_dict[time_str] = (
+                float(numbers[i])
+                * HOURLY_CURVE_BY_COUNTRY_COMMODITY((commodity, country))[hour]
+                * SEASON_CURVE_BY_COUNTRY_COMMODITY((commodity, country))[quarter]
+            )
         return result_dict
 
-    def get_prices_hh(country_code, n):
+    def get_prices_hh(n):
         n = n * 2
-        numbers = rand_numbers(n, COUNTRIES[country_code])
+        numbers = rand_numbers(n, CountryDefaultPriceBase[str(country)])
         result_dict: Dict[str, float] = {}
         minute = 0
         for i in range(n):
             hour = i // 2
             minute = 30 * (i % 2)
             time_str = f"{hour:02}{minute:02}"
-            result_dict[time_str] = float(numbers[i])
+            result_dict[time_str] = (
+                float(numbers[i])
+                * HOURLY_CURVE_BY_COUNTRY_COMMODITY((commodity, country))[hour]
+                * SEASON_CURVE_BY_COUNTRY_COMMODITY((commodity, country))[quarter]
+            )
         return result_dict
 
     STRATEGIES = {GranularityParam.h: get_prices_h, GranularityParam.hh: get_prices_hh}
 
-    if country_code not in COUNTRIES:
-        print("Country not supported")
-
-    n = get_hours_in_day(for_date, "America/New_York")
     print(n)
-    result_dict = STRATEGIES[granularity](country_code, n)
+    result_dict = STRATEGIES[granularity](n)
     print(result_dict)
 
 
