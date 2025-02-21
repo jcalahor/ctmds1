@@ -1,9 +1,7 @@
 import typer
 import numpy as np
-import time
 import logging
 from typing import Dict
-from enum import Enum
 from datetime import datetime, timedelta
 import pytz
 from constants import Countries, CountryDefaultPriceBase, GranularityParam, Commodity
@@ -66,32 +64,34 @@ def country_date(
         return random_numbers
 
     def get_prices_h(n):
-        numbers = rand_numbers(n, CountryDefaultPriceBase[str(country)])
+        numbers = rand_numbers(n, CountryDefaultPriceBase[country])
         result_dict: Dict[str, float] = {}
         minute = 0
         for i in range(n):
             hour = i
             time_str = f"{hour:02}{minute:02}"
-            result_dict[time_str] = (
+            result_dict[time_str] = round(
                 float(numbers[i])
                 * HOURLY_CURVE_BY_COUNTRY_COMMODITY((commodity, country))[hour]
-                * SEASON_CURVE_BY_COUNTRY_COMMODITY((commodity, country))[quarter]
+                * SEASON_CURVE_BY_COUNTRY_COMMODITY((commodity, country))[quarter],
+                2,
             )
         return result_dict
 
     def get_prices_hh(n):
         n = n * 2
-        numbers = rand_numbers(n, CountryDefaultPriceBase[str(country)])
+        numbers = rand_numbers(n, CountryDefaultPriceBase[country])
         result_dict: Dict[str, float] = {}
         minute = 0
         for i in range(n):
             hour = i // 2
             minute = 30 * (i % 2)
             time_str = f"{hour:02}{minute:02}"
-            result_dict[time_str] = (
+            result_dict[time_str] = round(
                 float(numbers[i])
-                * HOURLY_CURVE_BY_COUNTRY_COMMODITY((commodity, country))[hour]
-                * SEASON_CURVE_BY_COUNTRY_COMMODITY((commodity, country))[quarter]
+                * HOURLY_CURVE_BY_COUNTRY_COMMODITY[(country, commodity)][hour]
+                * SEASON_CURVE_BY_COUNTRY_COMMODITY[(country, commodity)][quarter],
+                2,
             )
         return result_dict
 
@@ -100,20 +100,6 @@ def country_date(
     print(n)
     result_dict = STRATEGIES[granularity](n)
     print(result_dict)
-
-
-@app.command()
-def generate(
-    number: int = typer.Option(..., help="Number of random numbers to generate")
-):
-    """Generate X number of random numbers"""
-
-    start_time = time.perf_counter()
-    logger.info(f"Current time: {start_time} seconds")
-    numpy_method(number)
-    end_time = time.perf_counter()
-    elapsed_time = end_time - start_time
-    logger.info(f"Elapsed time: {elapsed_time} seconds")
 
 
 if __name__ == "__main__":

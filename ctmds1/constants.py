@@ -20,8 +20,8 @@ class GranularityParam(str, Enum):
 
 
 CountryDefaultPriceBase = {
-    "GB": 61,
-    "FR": 58,
-    "NL": 52,
-    "DE": 57,
+    Countries.GB: 61,
+    Countries.FR: 58,
+    Countries.NL: 52,
+    Countries.DE: 57,
 }
