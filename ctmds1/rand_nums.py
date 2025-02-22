@@ -72,8 +72,8 @@ def country_date(
             time_str = f"{hour:02}{minute:02}"
             result_dict[time_str] = round(
                 float(numbers[i])
-                * HOURLY_CURVE_BY_COUNTRY_COMMODITY((commodity, country))[hour]
-                * SEASON_CURVE_BY_COUNTRY_COMMODITY((commodity, country))[quarter],
+                * HOURLY_CURVE_BY_COUNTRY_COMMODITY[(country, commodity)][hour]
+                * SEASON_CURVE_BY_COUNTRY_COMMODITY[(country, commodity)][quarter],
                 2,
             )
         return result_dict
@@ -97,9 +97,9 @@ def country_date(
 
     STRATEGIES = {GranularityParam.h: get_prices_h, GranularityParam.hh: get_prices_hh}
 
-    print(n)
-    result_dict = STRATEGIES[granularity](n)
-    print(result_dict)
+    prices = STRATEGIES[granularity](n)
+    print(prices)
+    return prices
 
 
 if __name__ == "__main__":
