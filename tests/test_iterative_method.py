@@ -1,24 +1,21 @@
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
-
-from generator import iterative_method, numpy_method
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../ctmds1"))
+)
+from constants import Countries, CountryDefaultPriceBase, GranularityParam, Commodity
+from rand_nums import country_date
 
 
 def test_iterative_method():
-    number = 1000
-    random_numbers = iterative_method(number)
-    assert len(random_numbers) == number
+    prices = country_date(
+        Commodity.power, "2025-01-01", Countries.DE, GranularityParam.h
+    )
 
-    for r in random_numbers:
-        assert r > 0 and r <= 100
+    assert len(prices.values()) == 24
 
-
-def test_numpy_method():
-    number = 1000
-    random_numbers = numpy_method(number)
-    assert len(random_numbers) == number
-
-    for r in random_numbers:
-        assert r > 0 and r <= 100
+    prices = country_date(
+        Commodity.crude, "2024-11-30", Countries.GB, GranularityParam.hh
+    )
+    assert len(prices.values()) == 48
