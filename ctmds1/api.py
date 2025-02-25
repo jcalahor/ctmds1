@@ -4,8 +4,19 @@ import logging
 from typing import Dict
 from datetime import datetime, timedelta
 import pytz
-from constants import Countries, CountryDefaultPriceBase, GranularityParam, Commodity
-from curves import SEASON_CURVE_BY_COUNTRY_COMMODITY, HOURLY_CURVE_BY_COUNTRY_COMMODITY
+from ctmds1.constants import (
+    Countries,
+    CountryDefaultPriceBase,
+    GranularityParam,
+    Commodity,
+)
+from ctmds1.curves import (
+    SEASON_CURVE_BY_COUNTRY_COMMODITY,
+    HOURLY_CURVE_BY_COUNTRY_COMMODITY,
+)
+from fastapi import FastAPI
+
+app = FastAPI()
 
 
 def get_calendar_details(date_str, timezone_str):
@@ -40,15 +51,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = typer.Typer()
-
 
 def numpy_method(n: int):
     random_numbers = np.random.uniform(1, 100, size=n)
     return random_numbers
 
 
-@app.command()
+@app.get("/country-date/{commodity}/{for_date}/{country}/{granularity}")
 def country_date(
     commodity: Commodity = Commodity.crude,
     for_date: str = typer.Option(...),
@@ -98,9 +107,9 @@ def country_date(
     STRATEGIES = {GranularityParam.h: get_prices_h, GranularityParam.hh: get_prices_hh}
 
     prices = STRATEGIES[granularity](n)
-    print(prices)
-    return prices
+    return {"prices": prices}
 
 
-if __name__ == "__main__":
-    app()
+@app.get("/")
+def read_root():
+    return {"message": "Hello, FastAPI with Poetry!"}
