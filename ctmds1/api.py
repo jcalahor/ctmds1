@@ -4,6 +4,8 @@ import logging
 from typing import Dict
 from datetime import datetime, timedelta
 import pytz
+from contextlib import asynccontextmanager
+
 from ctmds1.constants import (
     Countries,
     CountryDefaultPriceBase,
@@ -15,8 +17,23 @@ from ctmds1.curves import (
     HOURLY_CURVE_BY_COUNTRY_COMMODITY,
 )
 from fastapi import FastAPI
+from ctmds1.repository import init_db, get_hourly_curve_factor
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.db = await init_db()
+
+    print("Database initialized and ready.")
+
+    yield
+
+    # On shutdown: Clean up resources (close the connection)
+    app.state.db.close()
+    print("Database connection closed.")
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 def get_calendar_details(date_str, timezone_str):
@@ -65,6 +82,7 @@ def country_date(
     granularity: GranularityParam = GranularityParam.h,
 ):
     n, quarter = get_calendar_details(for_date, "America/New_York")
+    db = app.state.db
 
     def rand_numbers(n: int, base):
         low_limit = base - 10
@@ -73,6 +91,8 @@ def country_date(
         return random_numbers
 
     def get_prices_h(n):
+        hourly_factors = get_hourly_curve_factor(db, country, commodity)
+        print(hourly_factors)
         numbers = rand_numbers(n, CountryDefaultPriceBase[country])
         result_dict: Dict[str, float] = {}
         minute = 0
@@ -81,13 +101,15 @@ def country_date(
             time_str = f"{hour:02}{minute:02}"
             result_dict[time_str] = round(
                 float(numbers[i])
-                * HOURLY_CURVE_BY_COUNTRY_COMMODITY[(country, commodity)][hour]
+                * hourly_factors[hour]
                 * SEASON_CURVE_BY_COUNTRY_COMMODITY[(country, commodity)][quarter],
                 2,
             )
         return result_dict
 
     def get_prices_hh(n):
+        hourly_factors = get_hourly_curve_factor(db, country, commodity)
+        print(hourly_factors)
         n = n * 2
         numbers = rand_numbers(n, CountryDefaultPriceBase[country])
         result_dict: Dict[str, float] = {}
@@ -98,7 +120,7 @@ def country_date(
             time_str = f"{hour:02}{minute:02}"
             result_dict[time_str] = round(
                 float(numbers[i])
-                * HOURLY_CURVE_BY_COUNTRY_COMMODITY[(country, commodity)][hour]
+                * hourly_factors[hour]
                 * SEASON_CURVE_BY_COUNTRY_COMMODITY[(country, commodity)][quarter],
                 2,
             )
