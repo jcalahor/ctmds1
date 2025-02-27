@@ -12,10 +12,7 @@ from ctmds1.constants import (
     GranularityParam,
     Commodity,
 )
-from ctmds1.curves import (
-    SEASON_CURVE_BY_COUNTRY_COMMODITY,
-    HOURLY_CURVE_BY_COUNTRY_COMMODITY,
-)
+
 from fastapi import FastAPI
 from ctmds1.repository import init_db, get_hourly_curve_factor, get_season_curve_factor
 
