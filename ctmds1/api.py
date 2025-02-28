@@ -14,7 +14,12 @@ from ctmds1.constants import (
 )
 
 from fastapi import FastAPI
-from ctmds1.repository import init_db, get_hourly_curve_factor, get_season_curve_factor
+from ctmds1.repository import (
+    init_db,
+    get_hourly_curve_factor,
+    get_season_curve_factor,
+    get_currency_factor,
+)
 
 
 @asynccontextmanager
@@ -90,6 +95,7 @@ def country_date(
     def get_prices_h(n):
         hourly_factors = get_hourly_curve_factor(db, country, commodity)
         season_factors = get_season_curve_factor(db, country, commodity)
+        currency_factor = get_currency_factor(db, country)
         print(hourly_factors)
         numbers = rand_numbers(n, CountryDefaultPriceBase[country])
         result_dict: Dict[str, float] = {}
@@ -98,7 +104,10 @@ def country_date(
             hour = i
             time_str = f"{hour:02}{minute:02}"
             result_dict[time_str] = round(
-                float(numbers[i]) * hourly_factors[hour] * season_factors[quarter],
+                float(numbers[i])
+                * hourly_factors[hour]
+                * season_factors[quarter]
+                * currency_factor,
                 2,
             )
         return result_dict
@@ -106,6 +115,7 @@ def country_date(
     def get_prices_hh(n):
         hourly_factors = get_hourly_curve_factor(db, country, commodity)
         season_factors = get_season_curve_factor(db, country, commodity)
+        currency_factor = get_currency_factor(db, country)
         print(hourly_factors)
         n = n * 2
         numbers = rand_numbers(n, CountryDefaultPriceBase[country])
@@ -116,7 +126,10 @@ def country_date(
             minute = 30 * (i % 2)
             time_str = f"{hour:02}{minute:02}"
             result_dict[time_str] = round(
-                float(numbers[i]) * hourly_factors[hour] * season_factors[quarter],
+                float(numbers[i])
+                * hourly_factors[hour]
+                * season_factors[quarter]
+                * currency_factor,
                 2,
             )
         return result_dict

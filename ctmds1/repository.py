@@ -17,6 +17,12 @@ async def init_db():
         SELECT * FROM read_csv_auto('./ctmds1/data/curve_by_season.csv', HEADER=True)
     """
     )
+    conn.execute(
+        """
+        CREATE TABLE currency_rates AS 
+        SELECT * FROM read_csv_auto('./ctmds1/data/currency_rates.csv', HEADER=True)
+    """
+    )
     return conn
 
 
@@ -76,4 +82,26 @@ def get_season_curve_factor(
         return {season: factor for season, factor in results}
     except duckdb.Error as e:
         print(f"Error querying season curve factor: {e}")
+        return None
+
+
+def get_currency_factor(db, country: Countries) -> Optional[float]:
+    country_str = country.value
+    if country_str not in Countries.__members__:
+        raise ValueError("Invalid country")
+    try:
+        result = db.execute(
+            """
+            SELECT conversion_rate
+            FROM currency_rates
+            WHERE country = ?
+            """,
+            (country_str,),
+        ).fetchone()
+        print(result[0])
+        if not result:
+            return None
+        return result[0]
+    except duckdb.Error as e:
+        print(f"Error querying currency factor: {e}")
         return None
