@@ -4,8 +4,38 @@ import logging
 from typing import Dict
 from datetime import datetime, timedelta
 import pytz
-from constants import Countries, CountryDefaultPriceBase, GranularityParam, Commodity
-from curves import SEASON_CURVE_BY_COUNTRY_COMMODITY, HOURLY_CURVE_BY_COUNTRY_COMMODITY
+from contextlib import asynccontextmanager
+
+from ctmds1.constants import (
+    Countries,
+    CountryDefaultPriceBase,
+    GranularityParam,
+    Commodity,
+)
+
+from fastapi import FastAPI
+from ctmds1.repository import (
+    init_db,
+    get_hourly_curve_factor,
+    get_season_curve_factor,
+    get_currency_factor,
+)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.db = await init_db()
+
+    print("Database initialized and ready.")
+
+    yield
+
+    # On shutdown: Clean up resources (close the connection)
+    app.state.db.close()
+    print("Database connection closed.")
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 def get_calendar_details(date_str, timezone_str):
@@ -40,15 +70,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = typer.Typer()
-
 
 def numpy_method(n: int):
     random_numbers = np.random.uniform(1, 100, size=n)
     return random_numbers
 
 
-@app.command()
+@app.get("/country-date/{commodity}/{for_date}/{country}/{granularity}")
 def country_date(
     commodity: Commodity = Commodity.crude,
     for_date: str = typer.Option(...),
@@ -56,6 +84,7 @@ def country_date(
     granularity: GranularityParam = GranularityParam.h,
 ):
     n, quarter = get_calendar_details(for_date, "America/New_York")
+    db = app.state.db
 
     def rand_numbers(n: int, base):
         low_limit = base - 10
@@ -64,6 +93,10 @@ def country_date(
         return random_numbers
 
     def get_prices_h(n):
+        hourly_factors = get_hourly_curve_factor(db, country, commodity)
+        season_factors = get_season_curve_factor(db, country, commodity)
+        currency_factor = get_currency_factor(db, country)
+        print(hourly_factors)
         numbers = rand_numbers(n, CountryDefaultPriceBase[country])
         result_dict: Dict[str, float] = {}
         minute = 0
@@ -72,13 +105,18 @@ def country_date(
             time_str = f"{hour:02}{minute:02}"
             result_dict[time_str] = round(
                 float(numbers[i])
-                * HOURLY_CURVE_BY_COUNTRY_COMMODITY[(country, commodity)][hour]
-                * SEASON_CURVE_BY_COUNTRY_COMMODITY[(country, commodity)][quarter],
+                * hourly_factors[hour]
+                * season_factors[quarter]
+                * currency_factor,
                 2,
             )
         return result_dict
 
     def get_prices_hh(n):
+        hourly_factors = get_hourly_curve_factor(db, country, commodity)
+        season_factors = get_season_curve_factor(db, country, commodity)
+        currency_factor = get_currency_factor(db, country)
+        print(hourly_factors)
         n = n * 2
         numbers = rand_numbers(n, CountryDefaultPriceBase[country])
         result_dict: Dict[str, float] = {}
@@ -89,8 +127,9 @@ def country_date(
             time_str = f"{hour:02}{minute:02}"
             result_dict[time_str] = round(
                 float(numbers[i])
-                * HOURLY_CURVE_BY_COUNTRY_COMMODITY[(country, commodity)][hour]
-                * SEASON_CURVE_BY_COUNTRY_COMMODITY[(country, commodity)][quarter],
+                * hourly_factors[hour]
+                * season_factors[quarter]
+                * currency_factor,
                 2,
             )
         return result_dict
@@ -98,9 +137,9 @@ def country_date(
     STRATEGIES = {GranularityParam.h: get_prices_h, GranularityParam.hh: get_prices_hh}
 
     prices = STRATEGIES[granularity](n)
-    print(prices)
-    return prices
+    return {"prices": prices}
 
 
-if __name__ == "__main__":
-    app()
+@app.get("/")
+def read_root():
+    return {"message": "Hello, FastAPI with Poetry!"}
