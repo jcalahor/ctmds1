@@ -5,6 +5,7 @@ from typing import Dict
 from datetime import datetime, timedelta
 import pytz
 from contextlib import asynccontextmanager
+from power_setup import factor_cost_by_country
 
 from ctmds1.constants import (
     Countries,
@@ -71,11 +72,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def numpy_method(n: int):
-    random_numbers = np.random.uniform(1, 100, size=n)
-    return random_numbers
-
-
 @app.get("/country-date/{commodity}/{for_date}/{country}/{granularity}")
 def country_date(
     commodity: Commodity = Commodity.crude,
@@ -107,7 +103,8 @@ def country_date(
                 float(numbers[i])
                 * hourly_factors[hour]
                 * season_factors[quarter]
-                * currency_factor,
+                * currency_factor
+                * factor_cost_by_country(commodity, hour, country),
                 2,
             )
         return result_dict
@@ -130,6 +127,7 @@ def country_date(
                 * hourly_factors[hour]
                 * season_factors[quarter]
                 * currency_factor,
+                *factor_cost_by_country(commodity, hour, country),
                 2,
             )
         return result_dict
