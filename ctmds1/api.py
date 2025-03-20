@@ -4,8 +4,10 @@ import logging
 from typing import Dict
 from datetime import datetime, timedelta
 import pytz
+import os
+import yaml
 from contextlib import asynccontextmanager
-from power_setup import factor_cost_by_country
+from .power_setup import factor_cost_by_country
 
 from ctmds1.constants import (
     Countries,
@@ -23,17 +25,29 @@ from ctmds1.repository import (
 )
 
 
+config_path = "ctmds1/config.yaml"
+
+if os.path.exists(config_path):
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+        print(f)
+        logging.config.dictConfig(config)
+
+# Use the root logger to capture everything
+logger = logging.getLogger()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.db = await init_db()
 
-    print("Database initialized and ready.")
+    logger.info("Database initialized and ready.")
 
     yield
 
     # On shutdown: Clean up resources (close the connection)
     app.state.db.close()
-    print("Database connection closed.")
+    logger.info("Database connection closed.")
 
 
 app = FastAPI(lifespan=lifespan)
@@ -83,8 +97,8 @@ def country_date(
     db = app.state.db
 
     def rand_numbers(n: int, base):
-        low_limit = base - 10
-        upper_limit = base + 10
+        low_limit = base - 1
+        upper_limit = base + 1
         random_numbers = np.random.uniform(low_limit, upper_limit, size=n)
         return random_numbers
 
@@ -93,7 +107,7 @@ def country_date(
         season_factors = get_season_curve_factor(db, country, commodity)
         currency_factor = get_currency_factor(db, country)
         print(hourly_factors)
-        numbers = rand_numbers(n, CountryDefaultPriceBase[country])
+        numbers = rand_numbers(n, CountryDefaultPriceBase[(country, commodity)])
         result_dict: Dict[str, float] = {}
         minute = 0
         for i in range(n):
@@ -115,7 +129,7 @@ def country_date(
         currency_factor = get_currency_factor(db, country)
         print(hourly_factors)
         n = n * 2
-        numbers = rand_numbers(n, CountryDefaultPriceBase[country])
+        numbers = rand_numbers(n, CountryDefaultPriceBase[(country, commodity)])
         result_dict: Dict[str, float] = {}
         minute = 0
         for i in range(n):

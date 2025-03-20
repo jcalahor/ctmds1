@@ -1,5 +1,8 @@
 from enum import Enum
-from constants import Countries, Commodity
+from .constants import Countries, Commodity
+import logging
+
+logger = logging.getLogger()
 
 
 class PowerSource(str, Enum):
@@ -117,6 +120,10 @@ def factor_cost_by_country(commodity: Commodity, curr_hour: int, country: Countr
         demand = Demand.High
     elif curr_hour >= 22 and curr_hour < 24:
         demand = Demand.Medium
-    power_sources = COUNTRY_POWER_SOURCES[country]
-    target_power_source = max(power_sources, key=power_sources.get)
-    return COST_FACTOR[(demand, target_power_source)]
+    power_sources = COUNTRY_POWER_SOURCES[country][demand]
+    target_power_source = max(power_sources.keys(), key=power_sources.get)
+
+    final_cost_factor = COST_FACTOR[(demand, target_power_source)]
+    entry = f"Calculating cost factor with {commodity} - {curr_hour} - {country} - {target_power_source} - {final_cost_factor}"
+    logger.info(entry)
+    return final_cost_factor
