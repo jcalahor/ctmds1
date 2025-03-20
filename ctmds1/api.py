@@ -22,6 +22,8 @@ from ctmds1.repository import (
     get_hourly_curve_factor,
     get_season_curve_factor,
     get_currency_factor,
+    get_prices,
+    store_price,
 )
 
 
@@ -30,7 +32,6 @@ config_path = "ctmds1/config.yaml"
 if os.path.exists(config_path):
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
-        print(f)
         logging.config.dictConfig(config)
 
 # Use the root logger to capture everything
@@ -102,53 +103,50 @@ def country_date(
         random_numbers = np.random.uniform(low_limit, upper_limit, size=n)
         return random_numbers
 
-    def get_prices_h(n):
-        hourly_factors = get_hourly_curve_factor(db, country, commodity)
-        season_factors = get_season_curve_factor(db, country, commodity)
-        currency_factor = get_currency_factor(db, country)
-        print(hourly_factors)
-        numbers = rand_numbers(n, CountryDefaultPriceBase[(country, commodity)])
-        result_dict: Dict[str, float] = {}
-        minute = 0
-        for i in range(n):
-            hour = i
-            time_str = f"{hour:02}{minute:02}"
-            result_dict[time_str] = round(
-                float(numbers[i])
-                * hourly_factors[hour]
-                * season_factors[quarter]
-                * currency_factor
-                * factor_cost_by_country(commodity, hour, country),
-                2,
-            )
-        return result_dict
+    def get_saved_prices(country: Countries, commodity: Commodity, date_str: str):
+        return get_prices(country, commodity, date_str)
 
-    def get_prices_hh(n):
-        hourly_factors = get_hourly_curve_factor(db, country, commodity)
-        season_factors = get_season_curve_factor(db, country, commodity)
-        currency_factor = get_currency_factor(db, country)
-        print(hourly_factors)
-        n = n * 2
-        numbers = rand_numbers(n, CountryDefaultPriceBase[(country, commodity)])
-        result_dict: Dict[str, float] = {}
-        minute = 0
-        for i in range(n):
-            hour = i // 2
-            minute = 30 * (i % 2)
-            time_str = f"{hour:02}{minute:02}"
-            result_dict[time_str] = round(
-                float(numbers[i])
-                * hourly_factors[hour]
-                * season_factors[quarter]
-                * currency_factor,
-                *factor_cost_by_country(commodity, hour, country),
-                2,
-            )
-        return result_dict
+    def get_prices(n):
+        raw_prices = get_saved_prices(country, commodity, for_date)
+        if not raw_prices:
+            logger.info("Generating stored prices")
+            raw_prices = []
+            hourly_factors = get_hourly_curve_factor(db, country, commodity)
+            season_factors = get_season_curve_factor(db, country, commodity)
+            currency_factor = get_currency_factor(db, country)
+            n = n * 2
+            numbers = rand_numbers(n, CountryDefaultPriceBase[(country, commodity)])
+            minute = 0
+            for i in range(n):
+                hour = i // 2
+                minute = 30 * (i % 2)
+                price = round(
+                    float(numbers[i])
+                    * hourly_factors[hour]
+                    * season_factors[quarter]
+                    * currency_factor,
+                    *factor_cost_by_country(commodity, hour, country),
+                    2,
+                )
+                raw_price = {"hour": hour, "minute": minute, "price": price}
+                raw_prices.append(raw_price)
+                time_str = f"{hour:02}{minute:02}"
+                store_price(db, country, commodity, for_date, hour, minute, price)
+        else:
+            logger.info("Loaded stored prices")
 
-    STRATEGIES = {GranularityParam.h: get_prices_h, GranularityParam.hh: get_prices_hh}
+        included_minute_range = [0] if granularity == GranularityParam.h else [0, 30]
+        result_prices: Dict[str, float] = {}
+        for raw_price_entry in raw_prices:
+            minute = raw_price_entry["minute"]
+            if minute in included_minute_range:
+                hour = raw_price_entry["hour"]
+                price = raw_price_entry["price"]
+                time_str = f"{hour:02}{minute:02}"
+                result_prices[time_str] = price
+        return result_prices
 
-    prices = STRATEGIES[granularity](n)
+    prices = get_prices(n)
     return {"prices": prices}
 
 
