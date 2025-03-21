@@ -22,69 +22,23 @@ class Demand(str, Enum):
 
 COUNTRY_POWER_SOURCES = {
     Countries.GB: {
-        Demand.Low: {
-            PowerSource.Wind: 0.4,
-            PowerSource.Gas: 0.4,
-            PowerSource.Nuclear: 0.2,
-        },
-        Demand.Medium: {
-            PowerSource.Wind: 0.2,
-            PowerSource.Gas: 0.6,
-            PowerSource.Nuclear: 0.2,
-        },
-        Demand.High: {
-            PowerSource.Wind: 0.1,
-            PowerSource.Gas: 0.7,
-            PowerSource.Nuclear: 0.2,
-        },
+        PowerSource.Wind: {"capacity": 150, "cost": 10},
+        PowerSource.Gas: {"capacity": 600, "cost": 50},
+        PowerSource.Nuclear: {"capacity": 300, "cost": 20},
     },
     Countries.FR: {
-        Demand.Low: {
-            PowerSource.Wind: 0.2,
-            PowerSource.Gas: 0.2,
-            PowerSource.Nuclear: 0.6,
-        },
-        Demand.Medium: {
-            PowerSource.Wind: 0.1,
-            PowerSource.Gas: 0.4,
-            PowerSource.Nuclear: 0.5,
-        },
-        Demand.High: {
-            PowerSource.Wind: 0,
-            PowerSource.Gas: 0.5,
-            PowerSource.Nuclear: 0.5,
-        },
+        PowerSource.Wind: {"capacity": 100, "cost": 12},
+        PowerSource.Gas: {"capacity": 400, "cost": 45},
+        PowerSource.Nuclear: {"capacity": 500, "cost": 15},
     },
     Countries.DE: {
-        Demand.Low: {
-            PowerSource.Wind: 0.3,
-            PowerSource.Gas: 0.3,
-            PowerSource.Coal: 0.4,
-        },
-        Demand.Medium: {
-            PowerSource.Wind: 0.2,
-            PowerSource.Gas: 0.4,
-            PowerSource.Coal: 0.4,
-        },
-        Demand.High: {
-            PowerSource.Wind: 0.0,
-            PowerSource.Gas: 0.5,
-            PowerSource.Coal: 0.5,
-        },
+        PowerSource.Wind: {"capacity": 120, "cost": 8},
+        PowerSource.Gas: {"capacity": 400, "cost": 48},
+        PowerSource.Coal: {"capacity": 500, "cost": 70},
     },
     Countries.NL: {
-        Demand.Low: {
-            PowerSource.Wind: 0.3,
-            PowerSource.Gas: 0.7,
-        },
-        Demand.Medium: {
-            PowerSource.Wind: 0.2,
-            PowerSource.Gas: 0.8,
-        },
-        Demand.High: {
-            PowerSource.Wind: 0.1,
-            PowerSource.Gas: 0.9,
-        },
+        PowerSource.Wind: {"capacity": 100, "cost": 9},
+        PowerSource.Gas: {"capacity": 500, "cost": 55},
     },
 }
 
@@ -110,20 +64,52 @@ COST_FACTOR = {
 }
 
 
+def allocate_power(power_sources, demand_mwh):
+    sorted_sources = sorted(power_sources.items(), key=lambda x: x[1]["cost"])
+
+    remaining_demand = demand_mwh
+    total_cost = 0
+    allocation = []
+    max_cost = 0
+
+    for source, data in sorted_sources:
+        if remaining_demand <= 0:
+            break
+        supply = min(data["capacity"], remaining_demand)
+        if max_cost < data["cost"]:
+            max_cost = data["cost"]
+        allocation.append(
+            {"source": source.value, "supply": supply, "cost": data["cost"]}
+        )
+        remaining_demand -= supply
+
+    if remaining_demand > 0:
+        logger.info(
+            f"⚠️ Warning: Demand of {demand_mwh} MWh not fully met! {remaining_demand} MWh short."
+        )
+    else:
+        logger.info(f"Demand of {demand_mwh} MWh fully met!")
+
+    logger.info(f"Allocation was {allocation} - max cost {max_cost}")
+
+    for alloc in allocation:
+        total_cost += alloc["supply"] * max_cost
+    return total_cost
+
+
 def factor_cost_by_country(commodity: Commodity, curr_hour: int, country: Countries):
     if commodity != Commodity.power:
         return 1.0
-    demand = Demand.Low
+    demand = 400
     if curr_hour > 6 and curr_hour < 18:
-        demand = Demand.Medium
+        demand = 500
     elif curr_hour >= 18 and curr_hour < 22:
-        demand = Demand.High
+        demand = 600
     elif curr_hour >= 22 and curr_hour < 24:
-        demand = Demand.Medium
-    power_sources = COUNTRY_POWER_SOURCES[country][demand]
-    target_power_source = max(power_sources.keys(), key=power_sources.get)
+        demand = 400
+    power_sources = COUNTRY_POWER_SOURCES[country]
 
-    final_cost_factor = COST_FACTOR[(demand, target_power_source)]
-    entry = f"Calculating cost factor with {commodity} - {curr_hour} - {country} - {target_power_source} - {final_cost_factor}"
+    total_cost = allocate_power(power_sources, demand)
+    entry = f"Calculating cost factor with {commodity} - {curr_hour} - {country} - {total_cost}"
     logger.info(entry)
-    return final_cost_factor
+    return total_cost / 10000
