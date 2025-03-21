@@ -1,5 +1,6 @@
 from typing import List, Dict, Tuple, Optional
 import duckdb
+import logging
 from .constants import Countries, Commodity
 
 logger = logging.getLogger(__name__)
@@ -122,7 +123,7 @@ def store_price(
             INSERT INTO prices (country, commodity, price_date, hour, minute, price)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (country.value, commodity.value, price_date, hour, minute, price),
+            (country.value, commodity.value, price_date, hour, minute, round(price, 2)),
         )
         return True
     except duckdb.Error as e:
@@ -148,7 +149,7 @@ def get_prices(
             return None
 
         return [
-            {"hour": hour, "minute": minute, "price": price}
+            {"hour": hour, "minute": minute, "price": round(price, 2)}
             for hour, minute, price in results
         ]
     except duckdb.Error as e:

@@ -103,13 +103,11 @@ def country_date(
         random_numbers = np.random.uniform(low_limit, upper_limit, size=n)
         return random_numbers
 
-    def get_saved_prices(country: Countries, commodity: Commodity, date_str: str):
-        return get_prices(country, commodity, date_str)
-
-    def get_prices(n):
-        raw_prices = get_saved_prices(country, commodity, for_date)
+    def lookup_prices(n):
+        logger.info("Call lookup_prices")
+        raw_prices = get_prices(db, country, commodity, for_date)
         if not raw_prices:
-            logger.info("Generating stored prices")
+            logger.info("Generating prices")
             raw_prices = []
             hourly_factors = get_hourly_curve_factor(db, country, commodity)
             season_factors = get_season_curve_factor(db, country, commodity)
@@ -124,13 +122,12 @@ def country_date(
                     float(numbers[i])
                     * hourly_factors[hour]
                     * season_factors[quarter]
-                    * currency_factor,
-                    *factor_cost_by_country(commodity, hour, country),
+                    * currency_factor
+                    * factor_cost_by_country(commodity, hour, country),
                     2,
                 )
                 raw_price = {"hour": hour, "minute": minute, "price": price}
                 raw_prices.append(raw_price)
-                time_str = f"{hour:02}{minute:02}"
                 store_price(db, country, commodity, for_date, hour, minute, price)
         else:
             logger.info("Loaded stored prices")
@@ -146,7 +143,7 @@ def country_date(
                 result_prices[time_str] = price
         return result_prices
 
-    prices = get_prices(n)
+    prices = lookup_prices(n)
     return {"prices": prices}
 
 
