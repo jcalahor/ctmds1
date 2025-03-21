@@ -70,16 +70,17 @@ def allocate_power(power_sources, demand_mwh):
     remaining_demand = demand_mwh
     total_cost = 0
     allocation = []
+    max_cost = 0
 
     for source, data in sorted_sources:
         if remaining_demand <= 0:
             break
         supply = min(data["capacity"], remaining_demand)
-        cost_for_source = supply * data["cost"]
+        if max_cost < data["cost"]:
+            max_cost = data["cost"]
         allocation.append(
             {"source": source.value, "supply": supply, "cost": data["cost"]}
         )
-        total_cost += cost_for_source
         remaining_demand -= supply
 
     if remaining_demand > 0:
@@ -89,7 +90,10 @@ def allocate_power(power_sources, demand_mwh):
     else:
         logger.info(f"Demand of {demand_mwh} MWh fully met!")
 
-    logger.info(f"Allocation was {allocation}")
+    logger.info(f"Allocation was {allocation} - max cost {max_cost}")
+
+    for alloc in allocation:
+        total_cost += alloc["supply"] * max_cost
     return total_cost
 
 
@@ -108,4 +112,4 @@ def factor_cost_by_country(commodity: Commodity, curr_hour: int, country: Countr
     total_cost = allocate_power(power_sources, demand)
     entry = f"Calculating cost factor with {commodity} - {curr_hour} - {country} - {total_cost}"
     logger.info(entry)
-    return total_cost / 1000
+    return total_cost / 10000
