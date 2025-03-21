@@ -4,7 +4,10 @@ import logging
 from typing import Dict
 from datetime import datetime, timedelta
 import pytz
+import os
+import yaml
 from contextlib import asynccontextmanager
+from .power_setup import factor_cost_by_country
 
 from ctmds1.constants import (
     Countries,
@@ -19,20 +22,33 @@ from ctmds1.repository import (
     get_hourly_curve_factor,
     get_season_curve_factor,
     get_currency_factor,
+    get_prices,
+    store_price,
 )
+
+
+config_path = "ctmds1/config.yaml"
+
+if os.path.exists(config_path):
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+        logging.config.dictConfig(config)
+
+# Use the root logger to capture everything
+logger = logging.getLogger()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.db = await init_db()
 
-    print("Database initialized and ready.")
+    logger.info("Database initialized and ready.")
 
     yield
 
     # On shutdown: Clean up resources (close the connection)
     app.state.db.close()
-    print("Database connection closed.")
+    logger.info("Database connection closed.")
 
 
 app = FastAPI(lifespan=lifespan)
@@ -71,11 +87,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def numpy_method(n: int):
-    random_numbers = np.random.uniform(1, 100, size=n)
-    return random_numbers
-
-
 @app.get("/country-date/{commodity}/{for_date}/{country}/{granularity}")
 def country_date(
     commodity: Commodity = Commodity.crude,
@@ -87,56 +98,52 @@ def country_date(
     db = app.state.db
 
     def rand_numbers(n: int, base):
-        low_limit = base - 10
-        upper_limit = base + 10
+        low_limit = base - 1
+        upper_limit = base + 1
         random_numbers = np.random.uniform(low_limit, upper_limit, size=n)
         return random_numbers
 
-    def get_prices_h(n):
-        hourly_factors = get_hourly_curve_factor(db, country, commodity)
-        season_factors = get_season_curve_factor(db, country, commodity)
-        currency_factor = get_currency_factor(db, country)
-        print(hourly_factors)
-        numbers = rand_numbers(n, CountryDefaultPriceBase[country])
-        result_dict: Dict[str, float] = {}
-        minute = 0
-        for i in range(n):
-            hour = i
-            time_str = f"{hour:02}{minute:02}"
-            result_dict[time_str] = round(
-                float(numbers[i])
-                * hourly_factors[hour]
-                * season_factors[quarter]
-                * currency_factor,
-                2,
-            )
-        return result_dict
+    def lookup_prices(n):
+        logger.info("Call lookup_prices")
+        raw_prices = get_prices(db, country, commodity, for_date)
+        if not raw_prices:
+            logger.info("Generating prices")
+            raw_prices = []
+            hourly_factors = get_hourly_curve_factor(db, country, commodity)
+            season_factors = get_season_curve_factor(db, country, commodity)
+            currency_factor = get_currency_factor(db, country)
+            n = n * 2
+            numbers = rand_numbers(n, CountryDefaultPriceBase[(country, commodity)])
+            minute = 0
+            for i in range(n):
+                hour = i // 2
+                minute = 30 * (i % 2)
+                price = round(
+                    float(numbers[i])
+                    * hourly_factors[hour]
+                    * season_factors[quarter]
+                    * currency_factor
+                    * factor_cost_by_country(commodity, hour, country),
+                    2,
+                )
+                raw_price = {"hour": hour, "minute": minute, "price": price}
+                raw_prices.append(raw_price)
+                store_price(db, country, commodity, for_date, hour, minute, price)
+        else:
+            logger.info("Loaded stored prices")
 
-    def get_prices_hh(n):
-        hourly_factors = get_hourly_curve_factor(db, country, commodity)
-        season_factors = get_season_curve_factor(db, country, commodity)
-        currency_factor = get_currency_factor(db, country)
-        print(hourly_factors)
-        n = n * 2
-        numbers = rand_numbers(n, CountryDefaultPriceBase[country])
-        result_dict: Dict[str, float] = {}
-        minute = 0
-        for i in range(n):
-            hour = i // 2
-            minute = 30 * (i % 2)
-            time_str = f"{hour:02}{minute:02}"
-            result_dict[time_str] = round(
-                float(numbers[i])
-                * hourly_factors[hour]
-                * season_factors[quarter]
-                * currency_factor,
-                2,
-            )
-        return result_dict
+        included_minute_range = [0] if granularity == GranularityParam.h else [0, 30]
+        result_prices: Dict[str, float] = {}
+        for raw_price_entry in raw_prices:
+            minute = raw_price_entry["minute"]
+            if minute in included_minute_range:
+                hour = raw_price_entry["hour"]
+                price = raw_price_entry["price"]
+                time_str = f"{hour:02}{minute:02}"
+                result_prices[time_str] = price
+        return result_prices
 
-    STRATEGIES = {GranularityParam.h: get_prices_h, GranularityParam.hh: get_prices_hh}
-
-    prices = STRATEGIES[granularity](n)
+    prices = lookup_prices(n)
     return {"prices": prices}
 
 

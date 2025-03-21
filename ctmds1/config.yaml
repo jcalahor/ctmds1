@@ -1,0 +1,24 @@
+version: 1
+disable_existing_loggers: False
+
+# Define log formatters
+formatters:
+  standard:
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Define log handlers
+handlers:
+  app_file:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: standard
+    filename: app.log
+    maxBytes: 5242880  # 5 MB
+    backupCount: 5
+    encoding: utf-8
+
+# Define root logger to catch all logs
+loggers:
+  root:
+    level: INFO
+    handlers: [app_file]
