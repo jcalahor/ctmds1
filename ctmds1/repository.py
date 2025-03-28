@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Optional
 import duckdb
 import logging
 from .constants import Countries, Commodity
@@ -44,7 +44,6 @@ async def init_db():
 def get_hourly_curve_factor(
     db, country: Countries, commodity: Commodity
 ) -> Optional[Dict[int, float]]:
-
     try:
         results = db.execute(
             """

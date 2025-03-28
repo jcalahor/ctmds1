@@ -1,9 +1,7 @@
 import sys
 import os
 
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from contextlib import asynccontextmanager
 import pytest
 
 
