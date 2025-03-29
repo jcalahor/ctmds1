@@ -1,13 +1,18 @@
 import typer
-import numpy as np
-import logging
 from typing import Dict
+
 from datetime import datetime, timedelta
 import pytz
+import numpy as np
+import logging
 import os
 import yaml
+
+
 from contextlib import asynccontextmanager
-from .power_setup import factor_cost_by_country
+
+
+from ctmds1.power_setup import factor_cost_by_country
 
 from ctmds1.constants import (
     Countries,
@@ -33,6 +38,7 @@ if os.path.exists(config_path):
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
         logging.config.dictConfig(config)
+
 
 # Use the root logger to capture everything
 logger = logging.getLogger()
@@ -76,15 +82,6 @@ def get_calendar_details(date_str, timezone_str):
         quarter = "Q4"
 
     return int(hours), quarter
-
-
-# Configure the logger
-logging.basicConfig(
-    level=logging.DEBUG,  # Set the logging level
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # Log message format
-    datefmt="%Y-%m-%d %H:%M:%S",  # Date format
-)
-logger = logging.getLogger(__name__)
 
 
 @app.get("/country-date/{commodity}/{for_date}/{country}/{granularity}")

@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional
 import duckdb
 import logging
-from .constants import Countries, Commodity
+from ctmds1.constants import Countries, Commodity
 
 logger = logging.getLogger(__name__)
 

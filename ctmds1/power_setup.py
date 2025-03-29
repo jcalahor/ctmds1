@@ -1,5 +1,5 @@
 from enum import Enum
-from .constants import Countries, Commodity
+from ctmds1.constants import Countries, Commodity
 import logging
 
 logger = logging.getLogger()
