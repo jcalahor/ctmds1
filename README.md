@@ -51,3 +51,18 @@ $ curl -X GET "http://192.168.9.183:8000/country-date/crude/2024-02-24/GB/h" -H 
 ```
 curl -X GET "http://192.168.9.183:8000/country-date/power/2024-02-24/GB/h" -H "Accept: application/json"
 ```
+
+
+## Docker
+
+Building the image
+
+```
+docker build -t ctmds1:latest .
+```
+
+Running it
+```
+docker run -d -p 8000:8000 ctmds1
+```
+
